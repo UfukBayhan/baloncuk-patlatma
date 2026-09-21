@@ -28,7 +28,6 @@ public class BubblePopMathGame : MonoBehaviour
     public Vector2 spawnAreaWidth = new Vector2(-400f, 400f);
     private bool isRandomMode = false;
 
-    // ✅ CACHED NUMBER RANGE
     public Vector2Int numberRangeXY = new Vector2Int(1, 50);
     public int minNumber = 1;
     public int maxNumber = 50;
@@ -38,32 +37,26 @@ public class BubblePopMathGame : MonoBehaviour
     public int correctPops = 0;
     private bool levelTransitioning = false;
 
-    // ============ GREATER/LESS THAN MODE STATE ============
     private BubbleGameMode currentRandomMode; // isRandom=true için aktif mod
     private bool isGreaterThanMode = true; // Hangi mod aktif (true=büyük, false=küçük)
 
-    // ============ ADDITION MODE STATE ============
     public List<int> selectedNumbers = new List<int>();
     public List<GameObject> selectedBubbles = new List<GameObject>();
     public Queue<int> recentValuesAddition = new Queue<int>(5);
     private int currentSum = 0;
 
-    // ============ GENEL MOD İÇİN RECENT VALUES ============
     private Queue<int> recentValuesGeneral = new Queue<int>(8);
 
-    // ============ OBJECT POOLING ============
     private Queue<GameObject> bubblePool = new Queue<GameObject>();
     private List<GameObject> activeBubbles = new List<GameObject>();
     private const int INITIAL_BUBBLE_POOL = 20;
     private const int MAX_POOL_SIZE = 40;
 
-    // ============ CACHED COMPONENTS ============
     private Dictionary<GameObject, BubbleData> bubbleDataMap =
         new Dictionary<GameObject, BubbleData>();
     private StringBuilder stringBuilder = new StringBuilder(200);
     private System.Random sharedRandom = new System.Random();
 
-    // ============ SPAWN CONTROL ============
     private Coroutine spawnCoroutine;
     private float despawnHeight;
 
@@ -76,7 +69,7 @@ public class BubblePopMathGame : MonoBehaviour
         }
 
         InitializeObjectPools();
-        InitializeRandomMode(); // ✅ Random mod için başlangıç
+        InitializeRandomMode();
         ApplyDifficultyForLevel(levelIndex);
         StartLevel();
     }
@@ -96,7 +89,6 @@ public class BubblePopMathGame : MonoBehaviour
         levelIndex = stem.levelIndex;
         isRandomMode = stem.isRandom;
 
-        // ✅ NUMBER RANGE'İ BAŞTA CACHE'LE
         if (stem.numberRangeXY != Vector2.zero)
         {
             numberRangeXY = stem.numberRangeXY;
@@ -129,7 +121,6 @@ public class BubblePopMathGame : MonoBehaviour
         }
     }
 
-    // ============ RANDOM MODE INITIALIZATION ============
     private void InitializeRandomMode()
     {
         if (
@@ -168,7 +159,6 @@ public class BubblePopMathGame : MonoBehaviour
         }
     }
 
-    // ============ OBJECT POOLING IMPLEMENTATION ============
     private void InitializeObjectPools()
     {
         if (bubblePrefab == null || bubbleContainer == null)
@@ -311,7 +301,6 @@ public class BubblePopMathGame : MonoBehaviour
         bubbleDataMap.Clear();
     }
 
-    // ============ LEVEL MANAGEMENT ============
     private void StartLevel()
     {
         ClearAllBubbles();
@@ -406,12 +395,10 @@ public class BubblePopMathGame : MonoBehaviour
         ReturnBubbleToPool(movable.gameObject);
     }
 
-    // ============ BUBBLE VALUE GENERATION ============
     private int GenerateBubbleValue()
     {
         int correctChance = GetCorrectBubbleChance();
 
-        // ✅ Random mode kontrolü
         BubbleGameMode activeMode = GetActiveMode();
 
         switch (activeMode)
@@ -439,7 +426,7 @@ public class BubblePopMathGame : MonoBehaviour
         }
     }
 
-    // ✅ Aktif modu döndür (random mode kontrolü ile)
+    // Rastgele karşılaştırma modunda geçerli hedefi kullanır.
     private BubbleGameMode GetActiveMode()
     {
         if (
@@ -452,7 +439,6 @@ public class BubblePopMathGame : MonoBehaviour
         return gameMode;
     }
 
-    // ✅ GREATER THAN MODE
     private int GenerateGreaterThanValue(int correctChance)
     {
         bool shouldBeGreater = sharedRandom.Next(0, 100) < correctChance;
@@ -500,7 +486,6 @@ public class BubblePopMathGame : MonoBehaviour
         return generatedValue;
     }
 
-    // ✅ LESS THAN MODE
     private int GenerateLessThanValue(int correctChance)
     {
         bool shouldBeLess = sharedRandom.Next(0, 100) < correctChance;
@@ -551,7 +536,6 @@ public class BubblePopMathGame : MonoBehaviour
         return generatedValue;
     }
 
-    // ✅ ADDITION MODE
     private int GenerateAdditionValue()
     {
         int remaining = currentTargetNumber - currentSum;
@@ -609,7 +593,6 @@ public class BubblePopMathGame : MonoBehaviour
         return generatedValue;
     }
 
-    // ✅ MULTIPLICATION MODE
     private int GenerateMultiplicationValue(int correctChance)
     {
         bool isMultiple = sharedRandom.Next(0, 100) < correctChance;
@@ -644,7 +627,6 @@ public class BubblePopMathGame : MonoBehaviour
         return generatedValue;
     }
 
-    // ✅ FACTOR MODE
     private int GenerateFactorValue(int correctChance)
     {
         bool isFactor = sharedRandom.Next(0, 100) < correctChance;
@@ -654,7 +636,7 @@ public class BubblePopMathGame : MonoBehaviour
 
         if (isFactor)
         {
-            // 🎯 DOĞRU: Hedef sayının çarpanlarından birini üret
+            // Doğru seçenekler hedef sayının çarpanlarından seçilir.
             List<int> factors = GetFactors(currentTargetNumber);
 
             if (factors.Count > 0)
@@ -672,7 +654,7 @@ public class BubblePopMathGame : MonoBehaviour
         }
         else
         {
-            // 🎯 YANLIŞ: Hedefe yakın ama çarpan olmayan bir sayı üret
+            // Yanlış seçenekler hedefe yakın, çarpan olmayan sayılardan seçilir.
             int offset = sharedRandom.Next(10, 21); // hedefin ±10–20 çevresi
             bool goAbove = sharedRandom.Next(0, 2) == 0; // yukarı mı aşağı mı?
 
@@ -708,7 +690,7 @@ public class BubblePopMathGame : MonoBehaviour
             }
         }
 
-        // 🎯 Tekrarları azalt
+        // Tekrarları azalt
         recentValuesGeneral.Enqueue(generatedValue);
         if (recentValuesGeneral.Count > 8)
             recentValuesGeneral.Dequeue();
@@ -716,7 +698,6 @@ public class BubblePopMathGame : MonoBehaviour
         return generatedValue;
     }
 
-    // ✅ PRIME MODE
     private int GeneratePrimeValue(int correctChance)
     {
         bool shouldBePrime = sharedRandom.Next(0, 100) < correctChance;
@@ -754,7 +735,6 @@ public class BubblePopMathGame : MonoBehaviour
 
     private int GetCorrectBubbleChance()
     {
-        // ✅ Doğru cevap şansı çok daha yüksek ve yavaş azalıyor
         if (levelIndex <= 10)
             return 75;
         else if (levelIndex <= 20)
@@ -913,7 +893,6 @@ public class BubblePopMathGame : MonoBehaviour
 
     private bool CheckIfCorrect(int value, GameObject bubble)
     {
-        // ✅ Random mode kontrolü
         BubbleGameMode activeMode = GetActiveMode();
 
         switch (activeMode)
@@ -993,7 +972,7 @@ public class BubblePopMathGame : MonoBehaviour
 
         TriggerFinale();
 
-        // ✅ Random mode varsa, yeni modu seç
+        // Random mode varsa, yeni modu seç
         SwitchRandomMode();
 
         yield return StartCoroutine(WaitForSfxComplete());
@@ -1060,13 +1039,11 @@ public class BubblePopMathGame : MonoBehaviour
         Destroy(sfx, 2f);
     }
 
-    // ============ GAME MODE LOGIC ============
     private int GenerateTargetNumber()
     {
         int min = Mathf.Max(2, minNumber);
         int max = Mathf.Max(min, maxNumber);
 
-        // ✅ Random mode kontrolü
         BubbleGameMode activeMode = GetActiveMode();
 
         switch (activeMode)
@@ -1084,7 +1061,7 @@ public class BubblePopMathGame : MonoBehaviour
                 int factorBase;
                 int attempts = 0;
 
-                // 🔧 Artık seviye ile orantılı aralık kullanıyoruz
+                // Sayı aralığı seviyeyle birlikte genişler.
                 int levelScale = Mathf.Clamp(levelIndex, 1, 100);
                 int low = Mathf.Max(6, minNumber);
                 int high = Mathf.Min(maxNumber, 50 + levelScale * 5); // her seviye 5 artar (örn. lv50 → max 300)
@@ -1189,29 +1166,24 @@ public class BubblePopMathGame : MonoBehaviour
             targetPopCount = Mathf.RoundToInt(Mathf.Min(baseTarget + waveTarget, 10));
         }
 
-        // ✅ SPAWN INTERVAL: Daha yavaş başlayıp, daha az azalıyor (1.0s minimum)
         float baseSpawn = Mathf.Lerp(2.8f, 1.5f, cappedLevel / 50f);
         float waveSpawn = Mathf.Lerp(-0.1f, 0.1f, Mathf.Sin(level * Mathf.PI / 6f));
         spawnInterval = Mathf.Clamp(baseSpawn + waveSpawn, 1.0f, 3.0f);
 
-        // ✅ BUBBLE SPEED: Çok daha yavaş başlayıp, maksimum 3.0'a kadar çıkıyor
         float baseSpeed = Mathf.Lerp(1.2f, 2.5f, cappedLevel / 50f);
         float waveSpeed = Mathf.Lerp(-0.15f, 0.15f, Mathf.Sin(level * Mathf.PI / 12f));
         bubbleSpeed = Mathf.Clamp(baseSpeed + waveSpeed, 1.0f, 3.0f); // Max 3.0 hız
 
-        // ✅ MAX BUBBLES: Ekranda daha az baloncuk (5-10 arası)
         float baseMax = Mathf.Lerp(5f, 9f, cappedLevel / 50f);
         float waveMax = Mathf.Lerp(-0.3f, 0.3f, Mathf.Sin(level * Mathf.PI / 8f));
         maxBubbles = Mathf.RoundToInt(Mathf.Clamp(baseMax + waveMax, 5f, 10f)); // Max 10 baloncuk
-        // ✅ Her seviye için hedef sayıyı burada yeniden üret
         currentTargetNumber = GenerateTargetNumber();
 
-        // ✅ Aralıkları hedefe göre ayarla
         Vector2 range;
 
         if (gameMode == BubbleGameMode.FactorBubbles)
         {
-            // 🎯 Factor modunda hedefin çevresinde sabit ama mantıklı bir aralık oluştur
+            // Çarpan modunda sayı aralığı hedefe göre belirlenir.
             int offset = Mathf.Clamp(currentTargetNumber / 2, 10, 40);
             int low = Mathf.Max(2, currentTargetNumber - offset);
             int high = Mathf.Min(currentTargetNumber + offset, 200);
@@ -1229,7 +1201,6 @@ public class BubblePopMathGame : MonoBehaviour
             range.y += expand;
         }
 
-        // ✅ Cached değerleri güncelle
         int rx = Mathf.RoundToInt(range.x);
         int ry = Mathf.RoundToInt(range.y);
 
@@ -1256,7 +1227,6 @@ public class BubblePopMathGame : MonoBehaviour
 
     private Vector2 GetNumberRangeForLevel(int level)
     {
-        // ✅ Random mode kontrolü
         BubbleGameMode activeMode = GetActiveMode();
 
         float minValue = (activeMode == BubbleGameMode.PrimeBubbles) ? 2f : 1f;
@@ -1317,8 +1287,6 @@ public class BubblePopMathGame : MonoBehaviour
                 return new Vector2(minValue, 50);
         }
     }
-
-    // ============ MOD BAZLI MIN/MAX HESAPLAMALARI ============
 
     private float CalculateMinForAddition(int groupIndex)
     {
@@ -1586,7 +1554,6 @@ public class BubblePopMathGame : MonoBehaviour
         return baseMax - rangeSpread * (1f - wave);
     }
 
-    // ✅ GREATER/LESS THAN İÇİN MIN/MAX HESAPLAMALARI
     private float CalculateMinForComparison(int groupIndex)
     {
         if (groupIndex == 0)
@@ -1661,7 +1628,6 @@ public class BubblePopMathGame : MonoBehaviour
         return baseMax - rangeSpread * (1f - wave);
     }
 
-    // ============ UI UPDATE ============
     private void UpdateYonergeText()
     {
         if (yonergeText == null)
@@ -1669,7 +1635,6 @@ public class BubblePopMathGame : MonoBehaviour
 
         stringBuilder.Clear();
 
-        // ✅ Random mode kontrolü
         BubbleGameMode activeMode = GetActiveMode();
 
         switch (activeMode)
@@ -1746,7 +1711,6 @@ public class BubblePopMathGame : MonoBehaviour
         yonergeText.SetText(stringBuilder);
     }
 
-    // ============ DATA STRUCTURES ============
     private struct BubbleData
     {
         public int value;
